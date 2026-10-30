@@ -1,0 +1,69 @@
+# ============================================================================
+# 引脚约束 sd_hdmi_bmp.adc
+# 硬件：大拇指 EG4S20BG256 核心板 + M0 微处理器综合设计底板
+# 功能：TF卡读 BMP -> SDRAM 帧缓存 -> HDMI(DVI) 显示
+# ============================================================================
+
+# 50MHz 有源时钟
+set_pin_assignment	{ clk }	{ LOCATION = R7; IOSTANDARD = LVCMOS33; }
+
+# SW0 拨码开关：拨上=1运行，拨下=0复位重跑
+set_pin_assignment	{ rst_n }	{ LOCATION = A9; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+
+# 按键：核心板 4×4 矩阵键盘（行 Row0/Row1 分时拉低, 列 Col0..Col3 上拉采样）
+#   引脚来源: 《EG4S20BG256核心板 - 2023》原理图 IO.SchDoc
+#     Key_Row0 = E10   Key_Row1 = C10
+#     Key_Col0 = E11   Key_Col1 = D11   Key_Col2 = C11   Key_Col3 = F10
+#   丝印排布（底行左起 KEY0..KEY3, 上一行左起 KEY4..KEY7）
+#   key0 = KEY0 = Row0×Col0(E11): 上一张
+#   key1 = KEY1 = Row0×Col1(D11): 下一张
+#   key2 = KEY2 = Row0×Col2(C11): 自动轮播 开/关
+#   key3 = KEY3 = Row0×Col3(F10): 当前参数 -
+#   KEY4 = Row1×Col0(C10×E11): 当前参数 +
+#   KEY5 = Row1×Col1(C10×D11): 应急模式
+#   KEY6 = Row1×Col2(C10×C11): 短按 音频可视化开/关, 长按0.8s 切换调节参数
+#   KEY7 = Row1×Col3(C10×F10): 切换转场方式 (滑动 <-> 淡入淡出)
+set_pin_assignment	{ key_row }	{ LOCATION = E10; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ key_row1 }	{ LOCATION = C10; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ key0 }	{ LOCATION = E11; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment	{ key1 }	{ LOCATION = D11; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment	{ key2 }	{ LOCATION = C11; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+set_pin_assignment	{ key3 }	{ LOCATION = F10; IOSTANDARD = LVCMOS33; PULLTYPE = PULLUP; }
+
+# MicroSD 卡座（SPI模式）
+set_pin_assignment	{ sd_sck }	{ LOCATION = F15; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ sd_cs_n }	{ LOCATION = F13; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ sd_mosi }	{ LOCATION = F14; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ sd_miso }	{ LOCATION = D14; IOSTANDARD = LVCMOS33; }
+
+# HDMI (DVI) 差分输出（LVDS，仅约束P端；N端由 LVDS 原语自动配对）
+set_pin_assignment	{ HDMI_CLK_P }	{ LOCATION = P1; IOSTANDARD = LVDS33; }
+set_pin_assignment	{ HDMI_D0_P }	{ LOCATION = N1; IOSTANDARD = LVDS33; }
+set_pin_assignment	{ HDMI_D1_P }	{ LOCATION = P4; IOSTANDARD = LVDS33; }
+set_pin_assignment	{ HDMI_D2_P }	{ LOCATION = J3; IOSTANDARD = LVDS33; }
+
+# 4位数码管 位选（低有效）：[0]最右 [3]最左
+set_pin_assignment	{ seg_sel[0] }	{ LOCATION = C9; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_sel[1] }	{ LOCATION = B6; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_sel[2] }	{ LOCATION = A5; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_sel[3] }	{ LOCATION = A3; IOSTANDARD = LVCMOS33; }
+
+# 4位数码管 段选（高有效）：[0]=a ... [6]=g, [7]=dp
+set_pin_assignment	{ seg_led[0] }	{ LOCATION = A4; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[1] }	{ LOCATION = A6; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[2] }	{ LOCATION = B8; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[3] }	{ LOCATION = E8; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[4] }	{ LOCATION = A7; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[5] }	{ LOCATION = B5; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[6] }	{ LOCATION = A8; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ seg_led[7] }	{ LOCATION = C8; IOSTANDARD = LVCMOS33; }
+
+# 8个LED（高电平点亮）
+set_pin_assignment	{ led[0] }	{ LOCATION = B14; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[1] }	{ LOCATION = B15; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[2] }	{ LOCATION = B16; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[3] }	{ LOCATION = C15; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[4] }	{ LOCATION = C16; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[5] }	{ LOCATION = E13; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[6] }	{ LOCATION = E16; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ led[7] }	{ LOCATION = F16; IOSTANDARD = LVCMOS33; }
