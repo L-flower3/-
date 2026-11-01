@@ -8,38 +8,38 @@ IO Statistics
   #inout                    0
 
 Gate Statistics
-#Basic gates             8495
-  #and                    566
+#Basic gates             8513
+  #and                    567
   #nand                     0
   #or                     865
   #nor                      0
   #xor                    149
   #xnor                     0
   #buf                      0
-  #not                    566
+  #not                    569
   #bufif1                  32
   #MX21                  1063
   #FADD                     0
-  #DFF                   5254
+  #DFF                   5268
   #LATCH                    0
-#MACRO_ADD                452
-#MACRO_EQ                 127
+#MACRO_ADD                454
+#MACRO_EQ                 128
 #MACRO_MULT                14
-#MACRO_MUX               3244
+#MACRO_MUX               3260
 #MACRO_OTHERS              14
 
 Report Hierarchy Area:
 +---------------------------------------------------------------------------------------------------------------------+
 |Instance                                  |Module                                            |gates  |seq    |macros |
 +---------------------------------------------------------------------------------------------------------------------+
-|top                                       |top                                               |3241   |5254   |607    |
+|top                                       |top                                               |3245   |5268   |610    |
 |  u_audio_arc_calculate                   |audio_arc_calculate                               |3      |47     |4      |
-|  u_audio_vu                              |audio_vu                                          |287    |868    |61     |
+|  u_audio_vu                              |audio_vu                                          |286    |868    |61     |
 |  u_bright_ctrl                           |bright_ctrl                                       |122    |21     |41     |
 |  u_clk_pll                               |clk_pll                                           |0      |0      |1      |
 |  u_emergency_mode                        |emergency_mode                                    |33     |45     |39     |
-|  u_frame_rw                              |frame_read_write                                  |180    |468    |54     |
-|    frame_fifo_read_m0                    |frame_fifo_read                                   |65     |205    |25     |
+|  u_frame_rw                              |frame_read_write                                  |181    |468    |55     |
+|    frame_fifo_read_m0                    |frame_fifo_read                                   |66     |205    |26     |
 |    frame_fifo_write_m0                   |frame_fifo_write                                  |39     |75     |15     |
 |    read_buf                              |rfifo_32_32_512                                   |38     |94     |7      |
 |      ram_inst                            |ram_infer_rfifo_32_32_512                         |0      |0      |1      |
@@ -76,7 +76,7 @@ Report Hierarchy Area:
 |  u_hex7seg                               |hex7seg                                           |2      |0      |0      |
 |  u_key_scan                              |key_scan                                          |158    |150    |33     |
 |  u_osd_scroll                            |osd_scroll                                        |40     |9      |20     |
-|  u_sd_card_bmp                           |sd_card_bmp                                       |1708   |1478   |113    |
+|  u_sd_card_bmp                           |sd_card_bmp                                       |1717   |1490   |115    |
 |    bmp_read_m0                           |bmp_read                                          |585    |408    |26     |
 |    sd_card_top_m0                        |sd_card_top                                       |410    |181    |13     |
 |      sd_card_cmd_m0                      |sd_card_cmd                                       |276    |48     |8      |
@@ -89,11 +89,11 @@ Report Hierarchy Area:
 |    u_key_auto                            |key_press_debounce                                |30     |27     |2      |
 |    u_key_next                            |key_press_debounce                                |30     |27     |2      |
 |    u_key_prev                            |key_press_debounce                                |30     |27     |2      |
-|    u_wav_player                          |wav_player                                        |348    |423    |42     |
+|    u_wav_player                          |wav_player                                        |349    |423    |42     |
 |  u_sdr_as_ram                            |sdr_as_ram                                        |89     |530    |9      |
 |    u1_init_ref                           |sdr_init_ref                                      |24     |96     |4      |
 |    u2_wrrd                               |sdr_wrrd                                          |65     |434    |5      |
-|  u_seg4                                  |seg4_scan                                         |49     |16     |2      |
+|  u_seg4                                  |seg4_scan                                         |47     |16     |2      |
 |  u_trans_fade                            |trans_fade                                        |67     |35     |17     |
 |  u_vdelay                                |video_delay                                       |0      |66     |0      |
 |  u_video_pll                             |video_pll                                         |0      |0      |1      |

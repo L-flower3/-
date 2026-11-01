@@ -5,25 +5,28 @@ import_device eagle_s20.db -package EG4S20BG256
 open_project sd_hdmi_bmp.al
 commit_param -step design
 elaborate -top top
-read_adc sd_hdmi_bmp.adc
-read_sdc sd_hdmi_bmp.sdc
+read_adc constraints/sd_hdmi_bmp.adc
+read_sdc constraints/sd_hdmi_bmp.sdc
 commit_param -step rtl
 insert_debugger
 optimize_rtl
-report_area -file sd_hdmi_bmp_rtl.area
+report_area -file reports/sd_hdmi_bmp_rtl.area
 commit_param -step gate
-optimize_gate -packarea sd_hdmi_bmp_gate.area
+# V36: 固定 gate 映射种子 —— 交付的 bit 用 seed 1 (建立余量 0.185ns / 保持 0.011ns),
+#      写上这一行才能重编译复现同一个 bit; 换种子可换布局解, 但需重新看 route.qor 的 WNS。
+set_param gate map_seed 1
+optimize_gate -packarea reports/sd_hdmi_bmp_gate.area
 legalize_phy_inst
 update_timing
-report_timing_summary -file sd_hdmi_bmp_gate.timing
+report_timing_summary -file reports/sd_hdmi_bmp_gate.timing
 commit_param -step place
 place
 update_timing -mode manhattan
-report_timing_summary -file sd_hdmi_bmp_place.timing
+report_timing_summary -file reports/sd_hdmi_bmp_place.timing
 commit_param -step route
 route
 update_timing -mode final
-report_timing_summary -file sd_hdmi_bmp_pr.timing
+report_timing_summary -file reports/final_timing.rpt
 commit_param -step bitgen
-bitgen -bit sd_hdmi_bmp.bit
+bitgen -bit bitstream/sd_hdmi_bmp.bit
 puts "BUILD_DONE_OK"

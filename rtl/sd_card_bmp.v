@@ -10,6 +10,10 @@ module sd_card_bmp #(
     input                       key_prev,   // KEY0(E10xE11): 上一张
     input                       key_next,   // KEY1(E10xD11): 下一张
     input                       key_auto,   // KEY2(E10xC11): 自动轮播 开/关（瞬时按键）
+    // 转场进行中标志 (来自 trans_fade, 已在 100MHz 域同步):
+    //   1 = 两片帧缓存同时被读, 此时禁止启动新的写图任务,
+    //       否则会写穿正在显示的那片缓存 —— 滑动转场花屏的根因
+    input                       trans_busy,
     input  [15:0]               bmp_width,
     input  [15:0]               bmp_height,
     output reg                  display_valid,
@@ -86,6 +90,12 @@ reg              prev_req_pending;
 reg              load_busy;
 reg [31:0]       load_timeout_cnt;
 
+// 提交新图后的保护窗口 (100MHz 下 4096 拍 ≈ 41us):
+//   trans_busy 是从 video_clk(25MHz) 域跨过来的, 提交那一刻它还没拉高,
+//   中间有几个 25MHz 周期的死区; 用这个计数器把死区盖住,
+//   保证"提交 -> 转场真正开始"这段里绝不会启动新的写图。
+reg [11:0]       commit_guard;
+
 reg              load_abort;
 
 // bmp_ready 先表示“源文件读取/送 FIFO 完成”；真正切显示要等 write_finish_toggle 同步后
@@ -95,6 +105,18 @@ reg              write_done_seen;
 // 同步 mem_clk 域的 write_finish_toggle
 reg [2:0]        wrfin_tgl_sync;
 wire             write_finish_pulse;
+
+// 与状态机里"提交新图"用的是同一个条件
+wire             commit_now = load_busy && source_done_seen && write_done_seen;
+
+always @(posedge clk or posedge rst) begin
+    if (rst)                          commit_guard <= 12'd0;
+    else if (commit_now)              commit_guard <= 12'hFFF;
+    else if (commit_guard != 12'd0)   commit_guard <= commit_guard - 12'd1;
+end
+
+// 转场占用窗口: 转场进行中, 或刚提交完还在保护窗口内
+wire load_blocked = trans_busy || (commit_guard != 12'd0);
 
 wire auto_tick;
 wire [1:0] next_from_current;
@@ -361,7 +383,7 @@ always @(posedge clk or posedge rst) begin
                     auto_cnt         <= 32'd0;
                 end
                 // 手动下一张优先：写到“非当前显示”的另一块 buffer
-                else if (scan_done && bmp_ready && display_valid && !load_busy && next_req_pending && (img_found_count != 3'd0)) begin
+                else if (scan_done && bmp_ready && display_valid && !load_busy && !load_blocked && next_req_pending && (img_found_count != 3'd0)) begin
                     load_idx         <= next_from_current;
                     load_sector      <= sector_lut(next_from_current);
                     pending_buf_idx  <= next_buf_lut(disp_buf_idx, display_valid);
@@ -375,7 +397,7 @@ always @(posedge clk or posedge rst) begin
                     auto_cnt         <= 32'd0;
                 end
                 // 手动上一张：同样写到“非当前显示”的另一块 buffer
-                else if (scan_done && bmp_ready && display_valid && !load_busy && prev_req_pending && (img_found_count != 3'd0)) begin
+                else if (scan_done && bmp_ready && display_valid && !load_busy && !load_blocked && prev_req_pending && (img_found_count != 3'd0)) begin
                     load_idx         <= prev_from_current;
                     load_sector      <= sector_lut(prev_from_current);
                     pending_buf_idx  <= next_buf_lut(disp_buf_idx, display_valid);
@@ -389,7 +411,7 @@ always @(posedge clk or posedge rst) begin
                     auto_cnt         <= 32'd0;
                 end
                 // 自动播放下一张：同样写到“非当前显示”的另一块 buffer
-                else if (scan_done && bmp_ready && display_valid && !load_busy && auto_play_en && auto_tick && (img_found_count > 3'd1)) begin
+                else if (scan_done && bmp_ready && display_valid && !load_busy && !load_blocked && auto_play_en && auto_tick && (img_found_count > 3'd1)) begin
                     load_idx         <= next_from_current;
                     load_sector      <= sector_lut(next_from_current);
                     pending_buf_idx  <= next_buf_lut(disp_buf_idx, display_valid);

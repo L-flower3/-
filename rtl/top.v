@@ -1,6 +1,13 @@
 `timescale 1ns / 1ps
 //============================================================================
-// 模块名称 : top  (版本 V34)
+// 模块名称 : top  (版本 V36)
+// V36 变更 : 修滑动转场"交界处花屏 + 晃一下" —— frame_fifo_read 里帧内跳转的
+//            seg_hit 判据晚了一拍, 新突发的第一个字仍读 base+seg_cnt(已越出本帧末尾,
+//            BUF1 时即 614400 从未写过的区域), 且跳转点之后整体错位一字。
+//            改为 (rd_word_cnt + 2) == seg_cnt。数码管版本号 35 -> 36。
+// V35 变更 : 修复滑动转场花屏 —— 转场期间两片帧缓存同时被读, 写图任务必须暂停;
+//            新增 trans_fade.trans_busy 跨到 100MHz 写图域, 配合 sd_card_bmp 的
+//            commit_guard 保护窗口, 杜绝"边写边读"同一片缓存。数码管版本号 34 -> 35。
 // 功能描述 : TF卡读取 BMP(640x480/1280x960 x24bit) -> SDRAM 帧缓存 -> HDMI 显示
 //            扫描前 4 张 BMP, KEY0 上一张 / KEY1 下一张 / KEY2 自动轮播；安路 EG4S20BG256 + M0 底板
 //            HDMI 输出带 TF 卡 WAV 音频 (48000Hz/16bit/双声道, 播完无缝循环)
@@ -208,6 +215,21 @@ wire        wav_found;
 wire        wav_playing;
 wire        sd_init_status;   // SD 卡初始化完成 (led6 诊断)
 
+//--------------------- 转场占用标志跨时钟域 (video_clk -> sd_card_clk) ---------------------
+//  滑动/擦除转场期间, 两片帧缓存同时被读; 写侧若此时启动写图, 会覆盖正在显示的那片,
+//  表现就是转场过程中出现花屏/被涂抹。这里把标志同步到写图时钟域, 转场期间不启动新写图。
+wire trans_busy_w;
+reg  trans_busy_v1, trans_busy_v2;
+always @(posedge sd_card_clk or posedge rst_all) begin
+    if (rst_all) begin
+        trans_busy_v1 <= 1'b0;
+        trans_busy_v2 <= 1'b0;
+    end else begin
+        trans_busy_v1 <= trans_busy_w;
+        trans_busy_v2 <= trans_busy_v1;
+    end
+end
+
 sd_card_bmp #(
     .CLK_FREQ_HZ       (100_000_000),
     .SCAN_START_SECTOR (32'd0),
@@ -219,6 +241,7 @@ sd_card_bmp #(
     .key_prev          (key0_l | emg_state),   // 应急时锁定         // KEY0: 上一张
     .key_next          (key1_l | emg_state),         // KEY1: 下一张
     .key_auto          (key2_l | emg_state),         // KEY2: 自动轮播 开/关
+    .trans_busy        (trans_busy_v2),    // 转场进行中: 暂停启动新的写图
     .bmp_width         (16'd640),
     .bmp_height        (16'd480),
     .display_valid     (display_valid),
@@ -417,7 +440,8 @@ trans_fade #(
     .wipe_dx      (wipe_dx_w),
     .wipe_dir     (wipe_dir_w),
     .wipe_new_idx (wipe_new_idx_w),
-    .wipe_full    (wipe_full_w)
+    .wipe_full    (wipe_full_w),
+    .trans_busy   (trans_busy_w)
 );
 
 wire [23:0] vout_osd;
@@ -760,7 +784,7 @@ assign led[5]   = wav_playing;         // WAV 播放中
 assign led[6]   = sd_init_status;      // SD 卡初始化完成
 assign led[7]   = state_code[0];       // SD 状态机最低位
 
-// 数码管: 开机前 2 秒显示版本号 "34" (V34), 之后显示 state_code
+// 数码管: 开机前 2 秒显示版本号 "36" (V36), 之后显示 state_code
 //   版本号用于区分不同 bit 文件, 避免多版本混淆
 reg [26:0] ver_cnt;       // 2s @50MHz = 100,000,000 周期, 需 27 位
 reg        ver_show;      // 1=显示版本号, 0=显示 state_code
@@ -779,9 +803,9 @@ end
 wire [7:0] seg_code;
 hex7seg u_hex7seg(.hex(state_code), .seg(seg_code));
 
-// 版本号段码: 共阴段选高有效, 3=0x4F / 4=0x66  (V34 显示 "34")
+// 版本号段码: 共阴段选高有效, 3=0x4F / 6=0x7D  (V36 显示 "36")
 localparam SEG_3 = 8'h4F;
-localparam SEG_4 = 8'h66;
+localparam SEG_6 = 8'h7D;
 
 seg4_scan u_seg4(
     .clk     (clk),
@@ -789,7 +813,7 @@ seg4_scan u_seg4(
     .disp3   (8'h00),
     .disp2   (8'h00),
     .disp1   (ver_show ? SEG_3 : 8'h00),
-    .disp0   (ver_show ? SEG_4 : seg_code),
+    .disp0   (ver_show ? SEG_6 : seg_code),
     .seg_sel (seg_sel),
     .seg_led (seg_led)
 );
